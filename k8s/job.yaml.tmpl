@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB_NAME}
+  namespace: box-demo
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+      - name: prepare-box-credentials
+        image: ${IMAGE}
+        securityContext:
+          runAsUser: 0
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -eu
+          BOX_UID="$(id -u boxmount)"
+          BOX_GID="$(id -g boxmount)"
+          mkdir -p /runtime
+          chown "$BOX_UID:$BOX_GID" /runtime
+          chmod 0700 /runtime
+          cp "/source/${BOX_JWT_SECRET_KEY}" \
+             "/runtime/${BOX_JWT_SECRET_KEY}"
+          chown "$BOX_UID:$BOX_GID" \
+             "/runtime/${BOX_JWT_SECRET_KEY}"
+          chmod 0600 "/runtime/${BOX_JWT_SECRET_KEY}"
+        volumeMounts:
+        - name: box-jwt-source
+          mountPath: /source
+          readOnly: true
+        - name: box-jwt-runtime
+          mountPath: /runtime
+      containers:
+      - name: cv-review
+        image: ${IMAGE}
+        env:
+        - name: BOX_ROOT_FOLDER_ID
+          value: "${BOX_ROOT_FOLDER_ID}"
+        - name: BOX_MOUNT_PATH
+          value: /mnt/box
+        - name: BOX_JWT_CONFIG_PATH
+          value: "/run/box-secrets/${BOX_JWT_SECRET_KEY}"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+        volumeMounts:
+        - name: box-jwt-runtime
+          mountPath: /run/box-secrets
+          readOnly: true
+      volumes:
+      - name: box-jwt-source
+        secret:
+          secretName: ${BOX_JWT_SECRET_NAME}
+          defaultMode: 0400
+      - name: box-jwt-runtime
+        emptyDir:
+          medium: Memory

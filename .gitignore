@@ -1,0 +1,27 @@
+# Never commit Box credentials, private keys, or local cloud configuration.
+*.json
+!fixtures/**/*.json
+*.pem
+*.key
+.env
+.env.*
+!*.env.example
+*.log
+.DS_Store
+
+# Local cloud and Kubernetes state.
+kubeconfig
+*.kubeconfig
+
+# Local Box Mount state.
+.box-mount/
+
+# Local build/runtime output.
+build/
+dist/
+workspace/
+__pycache__/
+*.pyc
+
+# Proprietary Box Mount binary; place it locally before Cloud Build.
+image/box-mount

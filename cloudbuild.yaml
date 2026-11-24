@@ -1,0 +1,19 @@
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: agent-demo
+  _IMAGE: box-agent
+  _TAG: v0.1
+
+steps:
+- name: gcr.io/cloud-builders/docker
+  args:
+  - build
+  - -t
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:${_TAG}
+  - image
+
+images:
+- ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:${_TAG}
+
+options:
+  logging: CLOUD_LOGGING_ONLY
